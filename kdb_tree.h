@@ -5,8 +5,6 @@
 #include <memory>
 #include <list>
 #include <vector>
-#include <limits>
-#include <unordered_set>
 #include <unordered_map>
 #include <map>
 #include <chrono>
@@ -239,10 +237,20 @@ class Tree : public TreeBase {
     class NearReport : public NearReportInterface {
       public:
         inline virtual void operator()(const NodeInterfacePtr& near, const double dist_squared) override {
-          list.emplace_back(std::static_pointer_cast<Node>(near), dist_squared);
+          nears_.emplace(dist_squared, near);
         }
 
-        NearList list;
+        inline NearList ToList () const {
+          NearList near_list;
+          for (const auto& pair : nears_) {
+            near_list.emplace_back(std::static_pointer_cast<Node>(pair.second), pair.first);
+          }
+
+          return near_list;
+        }
+
+      private:
+        std::multimap<double, NodeInterfacePtr> nears_;
     };
 
 
@@ -299,14 +307,14 @@ class Tree : public TreeBase {
     NearList FindNears(const std::initializer_list<double> coords, const double radius_squared) const {      
       NearReport report;
       TreeBase::FindNears(LocaterNode(coords), radius_squared, report);
-      return report.list;
+      return report.ToList();
     }
 
     
     NearList FindNears(const Node& centre, const double radius_squared) const {
       NearReport report;
       TreeBase::FindNears(centre, radius_squared, report);
-      return report.list;
+      return report.ToList();
     }
 
 
