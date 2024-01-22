@@ -71,7 +71,8 @@ std::cout << "The number of nodes after insertion = " << tree.NodeCount() << std
 // TestTree::NearList is a list containing all nodes found,
 // in ascending order with respect to the distance (squared) to each node
 TestTree::NearList nearests = tree.FindNearests(*node0, 2);
-std::cout << "The nearest node: " << *nearests.front().first << ", dist squared = " << nearests.front().second << std::endl;
+std::cout << "The nearest node: " << *nearests.front().first
+          << ", dist squared = " << nearests.front().second << std::endl;
 
 TestTree::NearList nears = tree.FindNears(*node1, 3);
 std::cout << "The farthest node with a distance squared <= 3 : "
