@@ -65,12 +65,7 @@ class TreeBase {
     bool Insert(const NodeInterfacePtr& new_node);
     bool Delete(const NodeInterfacePtr& target_node);
     void FindNearests(const NodeInterface& centre, const unsigned int k, std::multimap<double, NodeInterfacePtr>& nearests) const;
-
-    class NearReportInterface {
-      public:
-        virtual void operator()(const NodeInterfacePtr& near, const double dist_squared) = 0;
-    };
-    void FindNears(const NodeInterface& centre, const double radius_squared, NearReportInterface& report) const;
+    void FindNears(const NodeInterface& centre, const double radius_squared, std::multimap<double, NodeInterfacePtr>& nears) const;
 
   private:
     class SplitDesc {
@@ -187,7 +182,7 @@ class TreeBase {
     bool Delete(const Region& region, const RecordPtr& record, const NodeInterfacePtr& target_node);
 
     void FindNearests(const RecordPtr& record, const NodeInterface& centre, const unsigned int k, std::multimap<double, NodeInterfacePtr>& nearests) const;
-    void FindNears(const RecordPtr& record, const NodeInterface& centre, const double radius_squared, NearReportInterface& report) const;
+    void FindNears(const RecordPtr& record, const NodeInterface& centre, const double radius_squared, std::multimap<double, NodeInterfacePtr>& nears) const;
 
     const unsigned int dimensionality_;
     const unsigned int collection_size_max_;
@@ -234,25 +229,15 @@ class Tree : public TreeBase {
         std::vector<double> coords_;
     };
 
-    class NearReport : public NearReportInterface {
-      public:
-        inline virtual void operator()(const NodeInterfacePtr& near, const double dist_squared) override {
-          nears_.emplace(dist_squared, near);
-        }
+    static inline NearList ConvertToNearList(const std::multimap<double, NodeInterfacePtr>& map) {
+      NearList near_list;
+      for (const auto& pair : map) {
+        near_list.emplace_back(std::static_pointer_cast<Node>(pair.second), pair.first);
+      }
 
-        inline NearList ToList () const {
-          NearList near_list;
-          for (const auto& pair : nears_) {
-            near_list.emplace_back(std::static_pointer_cast<Node>(pair.second), pair.first);
-          }
+      return near_list;
 
-          return near_list;
-        }
-
-      private:
-        std::multimap<double, NodeInterfacePtr> nears_;
-    };
-
+    }
 
   public:
 
@@ -281,40 +266,29 @@ class Tree : public TreeBase {
     
     NearList FindNearests(const std::initializer_list<double> coords, const unsigned int k=1) const {
       std::multimap<double, NodeInterfacePtr> nearests;
-
       TreeBase::FindNearests(LocaterNode(coords), k, nearests);
-      NearList near_list;
-      for (const auto& pair : nearests) {
-        near_list.emplace_back(std::static_pointer_cast<Node>(pair.second), pair.first);
-      }
-      return near_list;
-
+      return ConvertToNearList(nearests);
     }
     
     
     NearList FindNearests(const Node& centre, const unsigned int k=1) const {
       std::multimap<double, NodeInterfacePtr> nearests;
       TreeBase::FindNearests(centre, k, nearests);
-      NearList near_list;
-      for (const auto& pair : nearests) {
-        near_list.emplace_back(std::static_pointer_cast<Node>(pair.second), pair.first);
-      }
-      return near_list;
-
+      return ConvertToNearList(nearests);
     }
 
    
     NearList FindNears(const std::initializer_list<double> coords, const double radius_squared) const {      
-      NearReport report;
-      TreeBase::FindNears(LocaterNode(coords), radius_squared, report);
-      return report.ToList();
+      std::multimap<double, NodeInterfacePtr> nears;
+      TreeBase::FindNears(LocaterNode(coords), radius_squared, nears);
+      return ConvertToNearList(nears);
     }
 
     
     NearList FindNears(const Node& centre, const double radius_squared) const {
-      NearReport report;
-      TreeBase::FindNears(centre, radius_squared, report);
-      return report.ToList();
+      std::multimap<double, NodeInterfacePtr> nears;
+      TreeBase::FindNears(centre, radius_squared, nears);
+      return ConvertToNearList(nears);
     }
 
 

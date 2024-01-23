@@ -994,13 +994,13 @@ void TreeBase::FindNearests(const RecordPtr& record, const NodeInterface& centre
   }
 }
 
-void TreeBase::FindNears(const NodeInterface& centre, const double radius_squared, NearReportInterface& report) const {
+void TreeBase::FindNears(const NodeInterface& centre, const double radius_squared, std::multimap<double, NodeInterfacePtr>& nears) const {
   
-  FindNears(root_, centre, radius_squared, report);
+  FindNears(root_, centre, radius_squared, nears);
 }
 
 
-void TreeBase::FindNears(const RecordPtr& record, const NodeInterface& centre, const double radius_squared, NearReportInterface& report) const {
+void TreeBase::FindNears(const RecordPtr& record, const NodeInterface& centre, const double radius_squared, std::multimap<double, NodeInterfacePtr>& nears) const {
   if (record->is_leaf) {
     auto node_collection = std::static_pointer_cast<NodeCollection>(record);
     for (const auto& node : node_collection->nodes) {
@@ -1010,7 +1010,7 @@ void TreeBase::FindNears(const RecordPtr& record, const NodeInterface& centre, c
         dist_squared += diff * diff;
       }
       if (dist_squared <= radius_squared) {
-        report(node, dist_squared);
+        nears.emplace(dist_squared, node);
       }
     }
   }
@@ -1019,7 +1019,7 @@ void TreeBase::FindNears(const RecordPtr& record, const NodeInterface& centre, c
     RegionCollection::List::iterator sub_region_iter;
     for (sub_region_iter = region_collection->regions.begin(); sub_region_iter != region_collection->regions.end(); ++sub_region_iter) {          
       if (sub_region_iter->first.Contain(centre)) {        
-        FindNears(sub_region_iter->second, centre, radius_squared, report);
+        FindNears(sub_region_iter->second, centre, radius_squared, nears);
         break;
       }
     }
@@ -1029,7 +1029,7 @@ void TreeBase::FindNears(const RecordPtr& record, const NodeInterface& centre, c
         continue;
 
       if (other_iter->first.MightIntersect(centre, radius_squared, true))
-        FindNears(other_iter->second, centre, radius_squared, report);
+        FindNears(other_iter->second, centre, radius_squared, nears);
 
     }
 
