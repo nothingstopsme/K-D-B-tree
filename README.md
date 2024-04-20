@@ -6,9 +6,10 @@ This is a c++ implementation of K-D-B-tree introduced in this [paper](https://dl
 2. The distance (squared) is defined as the Euclidean distance in that multi-dimensional space
 
 ## Features
-1. Insertion/Deletion with self-balancing
-2. Searching for $k$ nearest neighbours, with $k \ge 1, k \in N$
-3. Searching for near neighbours within a given radius (squared)
+1. Insertion/Deletion with self-balancing.
+2. Searching for $k$ nearest neighbours, with $k \ge 1, k \in N$.
+3. Searching for near neighbours within a given radius (squared).
+4. Searching for all the points inside a given region (defined as a hyperrectangle in the search space), including those right on the region boundaries.
 
 ## Notes
 1. While one of the advantages of the likes of B-tree is the potential of better memory management via page utilisation, this implementation is not optimised for that.
