@@ -47,20 +47,20 @@ void TestNode::Print(std::ostream& os) const {
   os << "(" << x_ << "," << y_ << "," << z_ << ")";
 }
 
-using TestTree = Tree<3, TestNode>;
+using TestTree = Tree<3, TestNode, 3>;
 
 void Test_InsertThenDelete(const unsigned int num_of_nodes, const unsigned int seed) {
   std::minstd_rand engine(seed);
   std::uniform_int_distribution<int> distribution(-10, 10);
   std::cout << NOTICE_COLOUR << __func__ << COLOUR_END << std::endl;
   std::cout << "Inserting " << num_of_nodes << " nodes with integer coordinates, random seed = " << seed << std::endl;
-  
+
   TestTree tree;
   TestTree::NodePtrList all_nodes;
   try {
     unsigned int node_count = 0;
     for (unsigned int n = 0; n < num_of_nodes; ++n) {
-      auto node = std::make_shared<TestTree::Node>(distribution(engine), 
+      auto node = std::make_shared<TestTree::Node>(distribution(engine),
           distribution(engine),
           distribution(engine));
       if (tree.Insert(node)) {
@@ -78,7 +78,7 @@ void Test_InsertThenDelete(const unsigned int num_of_nodes, const unsigned int s
     if (!all_nodes.empty()) {
       std::cout << std::endl << "Deleting inserted nodes, in reverse order" << std::endl;
       for (std::list<TestTree::NodePtr>::iterator iter = --all_nodes.end();; --iter) {
-      
+
         if (tree.Delete(*iter))
           std::cout << NOTICE_COLOUR << "Deleting: " << COLOUR_END << **iter << std::endl
                   << tree << std::endl;
@@ -94,7 +94,7 @@ void Test_InsertThenDelete(const unsigned int num_of_nodes, const unsigned int s
   catch (const std::exception& e) {
     std::cout << ERROR_COLOUR << e.what() << COLOUR_END << std::endl;
   }
-  
+
 
 }
 
@@ -109,7 +109,7 @@ void PrepareRandomTestTree(const unsigned int expected_num_of_nodes, std::minstd
   for (unsigned int n = 0; n < expected_num_of_nodes*2; ++n) {
     bool result = false;
     double coords[] = {coord_dice(random_engine), coord_dice(random_engine), coord_dice(random_engine)};
-    auto node = std::make_shared<TestTree::Node>(coords[0], coords[1], coords[2]); 
+    auto node = std::make_shared<TestTree::Node>(coords[0], coords[1], coords[2]);
     if (n % 2 == 0) {
       result = tree.Insert(node);
     }
@@ -118,7 +118,7 @@ void PrepareRandomTestTree(const unsigned int expected_num_of_nodes, std::minstd
       if (result)
         node = tree.FindNearests({coords[0], coords[1], coords[2]}).front().first;
     }
-    
+
     if (result) {
       inserted_nodes.emplace_back(std::move(node));
       shuffle_vector.emplace_back(--inserted_nodes.end());
@@ -127,7 +127,7 @@ void PrepareRandomTestTree(const unsigned int expected_num_of_nodes, std::minstd
       std::cout << WARNING_COLOUR << "A duplicated node is detected: " << *node << "; skipping it." << COLOUR_END << std::endl;
   }
 
-  
+
   std::uniform_int_distribution<unsigned int> shuffle_dice (0, shuffle_vector.size()-1);
   for (unsigned int index = 0; index < shuffle_vector.size(); ++index) {
     unsigned int random_index = shuffle_dice(random_engine);
@@ -139,7 +139,7 @@ void PrepareRandomTestTree(const unsigned int expected_num_of_nodes, std::minstd
   }
 
   if (inserted_nodes.size() <= expected_num_of_nodes) {
-    
+
     std::cout << WARNING_COLOUR << "The number of inserted nodes does not exceed the expected one (" << expected_num_of_nodes << ")"
               << "; no deletion is performed" << COLOUR_END << std::endl;
     return;
@@ -154,10 +154,10 @@ void PrepareRandomTestTree(const unsigned int expected_num_of_nodes, std::minstd
     else {
       tree.Delete({(**deletion_iter)[0], (**deletion_iter)[1], (**deletion_iter)[2]});
     }
-    
+
     inserted_nodes.erase(deletion_iter);
     deletion_index++;
-  }  
+  }
 
 }
 
@@ -167,7 +167,7 @@ void Test_FindNearestsImpl(const TestTree& tree, const TestTree::NodePtrList& al
 
   unsigned int mismatch_count = 0;
   for (unsigned int n = 0; n < num_of_tests; ++n) {
-    auto centre = TestNode(coord_dice(random_engine), 
+    TestNode centre(coord_dice(random_engine),
                             coord_dice(random_engine),
                             coord_dice(random_engine));
 
@@ -187,7 +187,7 @@ void Test_FindNearestsImpl(const TestTree& tree, const TestTree::NodePtrList& al
       }
     }
 
-    TestTree::NearList kd_nearests; 
+    TestTree::NearList kd_nearests;
     const bool using_coords(n % 2 == 0);
     if (using_coords)
       kd_nearests = tree.FindNearests({centre[0], centre[1], centre[2]}, k);
@@ -199,10 +199,10 @@ void Test_FindNearestsImpl(const TestTree& tree, const TestTree::NodePtrList& al
     if (kd_nearests.size() != bf_nearests.size())
       mis_matched = true;
     else {
-      for (kd_iter = kd_nearests.begin(), bf_iter = bf_nearests.begin(); 
+      for (kd_iter = kd_nearests.begin(), bf_iter = bf_nearests.begin();
             kd_iter != kd_nearests.end() && bf_iter != bf_nearests.end();
-            ++kd_iter, ++bf_iter) {        
-        
+            ++kd_iter, ++bf_iter) {
+
         if (kd_iter->first.get() != bf_iter->second.get() || kd_iter->second != bf_iter->first
           ) {
           std::cout << WARNING_COLOUR << "kd: " << *kd_iter->first << "(" << kd_iter->second  << "), bf: " << *bf_iter->second << "(" << bf_iter->first << ")" << COLOUR_END << std::endl;
@@ -213,9 +213,9 @@ void Test_FindNearestsImpl(const TestTree& tree, const TestTree::NodePtrList& al
       }
     }
 
-    
+
     if (mis_matched) {
-      std::cout << WARNING_COLOUR 
+      std::cout << WARNING_COLOUR
       << "Mismatch detected: centre = " << centre << ", using_coords = " << using_coords << ", brute-force and kd produce different lists of " << k << "-nearest neighbours" << COLOUR_END << std::endl;
       mismatch_count += 1;
     }
@@ -242,10 +242,10 @@ void Test_FindNearests(const unsigned int k, const unsigned int seed) {
 
   try {
     PrepareRandomTestTree(NUM_OF_NODES, random_engine, coord_dice, tree, all_nodes);
-    std::cout << "Number of valid nodes = " << all_nodes.size() << std::endl;  
+    std::cout << "Number of valid nodes = " << all_nodes.size() << std::endl;
   }
   catch (const std::exception& e) {
-    std::cout << ERROR_COLOUR << e.what() << COLOUR_END << std::endl;    
+    std::cout << ERROR_COLOUR << e.what() << COLOUR_END << std::endl;
     return;
   }
 
@@ -262,10 +262,10 @@ void Test_FindNearsImpl(const TestTree& tree, const TestTree::NodePtrList& all_n
 
   unsigned int mismatch_count = 0;
   for (unsigned int n = 0; n < num_of_tests; ++n) {
-    auto centre = TestNode(coord_dice(random_engine), 
+    TestNode centre(coord_dice(random_engine),
                             coord_dice(random_engine),
                             coord_dice(random_engine));
-    double radius_squared = radius_dice(random_engine); 
+    double radius_squared = radius_dice(random_engine);
     unsigned int dimensionality = tree.K;
 
     auto comparator = [dimensionality](const TestTree::NearList::value_type& a, const TestTree::NearList::value_type& b) -> bool {
@@ -311,7 +311,7 @@ void Test_FindNearsImpl(const TestTree& tree, const TestTree::NodePtrList& all_n
       bf_near_list.sort(comparator);
       kd_near_list.sort(comparator);
 
-      for (auto bf_iter = bf_near_list.begin(), kd_iter = kd_near_list.begin(); 
+      for (auto bf_iter = bf_near_list.begin(), kd_iter = kd_near_list.begin();
             bf_iter != bf_near_list.end() && kd_iter != kd_near_list.end(); ++bf_iter, ++kd_iter) {
         for (unsigned int d = 0; d < dimensionality; ++d) {
           if ((*bf_iter->first)[d] != (*kd_iter->first)[d]) {
@@ -325,7 +325,7 @@ void Test_FindNearsImpl(const TestTree& tree, const TestTree::NodePtrList& all_n
           break;
       }
     }
-    
+
     if (mis_matched) {
       mismatch_count += 1;
     }
@@ -351,10 +351,10 @@ void Test_FindNears(const unsigned int seed) {
 
   try {
     PrepareRandomTestTree(NUM_OF_NODES, random_engine, coord_dice, tree, all_nodes);
-    std::cout << "Number of valid nodes = " << all_nodes.size() << std::endl;  
+    std::cout << "Number of valid nodes = " << all_nodes.size() << std::endl;
   }
   catch (const std::exception& e) {
-    std::cout << ERROR_COLOUR << e.what() << COLOUR_END << std::endl;    
+    std::cout << ERROR_COLOUR << e.what() << COLOUR_END << std::endl;
     return;
   }
 
@@ -363,6 +363,103 @@ void Test_FindNears(const unsigned int seed) {
 
 }
 
+void Test_FindContainedImpl(const TestTree& tree, const TestTree::NodePtrList& all_nodes, const unsigned int num_of_tests, std::minstd_rand& random_engine, std::uniform_real_distribution<double>& coord_dice) {
+
+  std::cout << "Testing with " << num_of_tests << " random (centre, radius) pairs" << std::endl;
+
+  unsigned int mismatch_count = 0;
+  for (unsigned int n = 0; n < num_of_tests; ++n) {
+    TestTree::BoundingRegion bounding_region({
+                    {coord_dice(random_engine), coord_dice(random_engine)},
+                    {coord_dice(random_engine), coord_dice(random_engine)},
+                    {coord_dice(random_engine), coord_dice(random_engine)}
+                    });
+    unsigned int dimensionality = tree.K;
+
+    auto comparator = [dimensionality](const TestTree::NodePtrList::value_type& a, const TestTree::NodePtrList::value_type& b) -> bool {
+      for (unsigned int d = 0; d < dimensionality; ++d) {
+        if ((*a)[d] != (*b)[d])
+          return (*a)[d] < (*b)[d];
+      }
+
+      // for the case where a is completely equal to b
+      return false;
+    };
+
+    //brute-force search
+    TestTree::NodePtrList bf_list, kd_list;
+    for (const auto& candidate : all_nodes) {
+
+      if (bounding_region.Contain(*candidate)) {
+        bf_list.push_back(candidate);
+      }
+    }
+
+    kd_list = tree.FindContained(bounding_region);
+    bool mis_matched = false;
+    if (bf_list.size() != kd_list.size()) {
+      std::cout << WARNING_COLOUR << "Mismatch detected: bounding_region = " << bounding_region << "; bf found " << bf_list.size() << " nodes; kd found " << kd_list.size() << " nodes" << COLOUR_END << std::endl;
+      mis_matched = true;
+    }
+    else {
+
+      bf_list.sort(comparator);
+      kd_list.sort(comparator);
+
+      for (auto bf_iter = bf_list.begin(), kd_iter = kd_list.begin();
+            bf_iter != bf_list.end() && kd_iter != kd_list.end(); ++bf_iter, ++kd_iter) {
+        for (unsigned int d = 0; d < dimensionality; ++d) {
+          if ((**bf_iter)[d] != (**kd_iter)[d]) {
+            std::cout << WARNING_COLOUR << "Mismatch detected: bounding_region = " << bounding_region << "; bf and kd did not find the same list of nodes"<< COLOUR_END << std::endl;
+
+            mis_matched = true;
+            break;
+          }
+        }
+        if (mis_matched)
+          break;
+      }
+    }
+
+    if (mis_matched) {
+      mismatch_count += 1;
+    }
+
+  }
+
+  if (mismatch_count)
+    std::cout << ERROR_COLOUR << "mismatch_count = " << mismatch_count << COLOUR_END << std::endl;
+  else
+    std::cout << OK_COLOUR << "Pass" << COLOUR_END << std::endl;
+
+}
+
+void Test_FindContained(const unsigned int seed) {
+  std::cout << NOTICE_COLOUR << __func__ << COLOUR_END << ": random seed = " << seed  << std::endl;
+  std::minstd_rand random_engine(seed);
+  std::uniform_real_distribution<double> coord_dice (-20.0, 20.0);
+  constexpr unsigned int NUM_OF_NODES = 100;
+
+  TestTree tree;
+  TestTree::NodePtrList all_nodes;
+
+
+  try {
+    PrepareRandomTestTree(NUM_OF_NODES, random_engine, coord_dice, tree, all_nodes);
+    std::cout << "Number of valid nodes = " << all_nodes.size() << std::endl;
+  }
+  catch (const std::exception& e) {
+    std::cout << ERROR_COLOUR << e.what() << COLOUR_END << std::endl;
+    return;
+  }
+
+  Test_FindContainedImpl(tree, all_nodes, NUM_OF_NODES, random_engine, coord_dice);
+
+
+}
+
+
+
 
 } // namespace unit_test
 
@@ -370,10 +467,14 @@ TreeBase::Region::Region(const unsigned int dimensionality)
 : boundaries_(dimensionality) {
 }
 
+void TreeBase::Region::SetBoundaries(std::vector<TreeBase::Region::Boundary>&& boundaries) {
+  boundaries_ = std::move(boundaries);
+}
+
 TreeBase::Region::Region(const Region& other)
 : boundaries_(other.boundaries_.size()) {
 
-  for (unsigned int d = 0; d < other.boundaries_.size(); ++d) {    
+  for (unsigned int d = 0; d < other.boundaries_.size(); ++d) {
     const Boundary& other_boundary = other.boundaries_.at(d);
     if (other_boundary.first)
       boundaries_[d].first = std::make_shared<Boundary::first_type::element_type>(*other_boundary.first);
@@ -390,35 +491,85 @@ const TreeBase::Region::Boundary& TreeBase::Region::operator[](const unsigned in
   return boundaries_.at(dimension);
 }
 
-bool TreeBase::Region::Contain(const NodeInterface& node) const {
+bool TreeBase::Region::Contain(const NodeInterface& node, const bool including_upper_bound) const {
 
   for (unsigned int d = 0; d < boundaries_.size(); ++d) {
     const Boundary& boundary = boundaries_.at(d);
-     
-    if ((boundary.first && node[d] < *boundary.first) || (boundary.second && node[d] >= *boundary.second))
+
+    if (boundary.first && node[d] < *boundary.first)
       return false;
+
+    if (boundary.second) {
+      if (including_upper_bound) {
+        if (node[d] > *boundary.second)
+          return false;
+      }
+      else {
+        if (node[d] >= *boundary.second)
+          return false;
+      }
+    }
   }
 
   return true;
 }
 
-bool TreeBase::Region::MightIntersect(const NodeInterface& centre, const double radius_squared, const bool inclusive) const {
+bool TreeBase::Region::Intersect(const NodeInterface& centre, const double radius_squared, const bool inclusive) const {
 
   for(unsigned int d = 0; d < boundaries_.size(); ++d) {
     const Boundary& boundary = boundaries_.at(d);
     double dist = 0.0;
-    
+
     if (boundary.first && centre[d] < *boundary.first)
       dist = *boundary.first - centre[d];
     else if (boundary.second && centre[d] >= *boundary.second)
       dist = centre[d] - *boundary.second;
-    
-    double dist_squared = dist * dist;
-    if (!inclusive && dist_squared == radius_squared)
-      return false;    
-    else if (dist_squared > radius_squared)
-      return false;
 
+    double dist_squared = dist * dist;
+    if (inclusive) {
+      if (dist_squared > radius_squared)
+        return false;
+    }
+    else {
+      if (dist_squared >= radius_squared)
+        return false;
+    }
+
+  }
+
+  return true;
+
+}
+
+
+bool TreeBase::Region::Intersect(const TreeBase::Region& other, const bool inclusive) const {
+
+  for(unsigned int d = 0; d < boundaries_.size(); ++d) {
+    const Boundary& self_boundary = boundaries_.at(d);
+    const Boundary& other_boundary = other.boundaries_.at(d);
+
+    if (self_boundary.first && other_boundary.second) {
+      if (inclusive) {
+        if (*self_boundary.first > *other_boundary.second)
+          return false;
+      }
+      else {
+        if (*self_boundary.first >= *other_boundary.second)
+          return false;
+      }
+    }
+
+    if (other_boundary.first && self_boundary.second) {
+      if (inclusive) {
+        if (*other_boundary.first > *self_boundary.second)
+          return false;
+      }
+      else {
+        if (*other_boundary.first >= *self_boundary.second)
+          return false;
+      }
+
+    }
   }
 
   return true;
@@ -457,7 +608,7 @@ TreeBase::Region TreeBase::Region::Split(const TreeBase::SplitDesc& split) {
     *right_boundary.first = split.at;
   else
     right_boundary.first = std::make_shared<double>(split.at);
-  
+
   if (left_boundary.second)
     *left_boundary.second = split.at;
   else
@@ -520,7 +671,7 @@ void TreeBase::Print(std::ostream& os) const {
       for (const RegionRecord& rr : *sub_list) {
         os << NOTICE_COLOUR << "  Region: " << rr.first << COLOUR_END;
         os << "<";
-        if (rr.second->is_leaf) {        
+        if (rr.second->is_leaf) {
           auto node_collection = std::static_pointer_cast<NodeCollection>(rr.second);
           for (const NodeInterfacePtr& node : node_collection->nodes) {
             os << *node;
@@ -538,7 +689,7 @@ void TreeBase::Print(std::ostream& os) const {
     curr_list.clear();
     curr_list.swap(next_list);
   }
-  
+
 }
 
 
@@ -551,7 +702,7 @@ bool TreeBase::Insert(const NodeInterfacePtr& new_node) {
     RegionRecordPtr new_sub_region = SplitIfNeeded(full, root_);
     if (new_sub_region) {
       auto new_root = std::make_shared<RegionCollection>(false);
-      
+
       new_root->regions.emplace_back(std::move(*new_sub_region));
       new_root->regions.emplace_back(std::move(full), std::move(root_));
       root_ = std::static_pointer_cast<Record>(new_root);
@@ -566,7 +717,7 @@ TreeBase::RegionRecordPtr TreeBase::Split(Region& region, const RecordPtr& recor
 
   if (record->is_leaf) {
     auto right_nc = std::static_pointer_cast<NodeCollection>(record);
-    
+
 
     Region left_region = region.Split(split);
 
@@ -585,7 +736,7 @@ TreeBase::RegionRecordPtr TreeBase::Split(Region& region, const RecordPtr& recor
   }
   else {
     auto right_rc = std::static_pointer_cast<RegionCollection>(record);
-    
+
     Region left_region = region.Split(split);
     auto left_rc = std::make_shared<RegionCollection>(false);
 
@@ -610,7 +761,7 @@ TreeBase::RegionRecordPtr TreeBase::Split(Region& region, const RecordPtr& recor
     }
 
     return std::make_shared<RegionRecord>(std::move(left_region), std::static_pointer_cast<Record>(left_rc));
-  
+
   }
 }
 
@@ -621,7 +772,7 @@ TreeBase::RegionRecordPtr TreeBase::SplitIfNeeded(Region& region, const RecordPt
     auto node_collection = std::static_pointer_cast<NodeCollection>(record);
     if (node_collection->nodes.size() > collection_size_max_) {
       // Finding a coordinate at which a split can produce the most balanced node distribution,
-      // i.e. the number of nodes in the left region is as close as possible to 
+      // i.e. the number of nodes in the left region is as close as possible to
       // the number of nodes in the right region after the split
 
       SplitDesc split;
@@ -630,7 +781,7 @@ TreeBase::RegionRecordPtr TreeBase::SplitIfNeeded(Region& region, const RecordPt
 
       for (unsigned int d = 0; d < dimensionality_ && best_lr_diff > theoretical_best_lr_diff; ++d) {
         std::unordered_map<double, unsigned int> coord_counts;
-        
+
         const Region::Boundary& boundary = region[d];
         for (const NodeInterfacePtr& existing_node : node_collection->nodes) {
           double coord = (*existing_node)[d];
@@ -655,7 +806,7 @@ TreeBase::RegionRecordPtr TreeBase::SplitIfNeeded(Region& region, const RecordPt
           for (unsigned int p = 0; p < splitter_at; ++p) {
             left += candidate_points[p].second;
           }
-          left *= 2;          
+          left *= 2;
           if (left > node_collection->nodes.size())
             lr_diff = left - node_collection->nodes.size();
           else
@@ -669,7 +820,7 @@ TreeBase::RegionRecordPtr TreeBase::SplitIfNeeded(Region& region, const RecordPt
         }
       }
 
-      // If best_lr_diff >= node_collection->nodes.size(), 
+      // If best_lr_diff >= node_collection->nodes.size(),
       // it means a split point that produces a new region containing at least one node can not be found,
       // and this should not happen as there is no duplication
       if (best_lr_diff >= node_collection->nodes.size()) {
@@ -719,7 +870,7 @@ TreeBase::RegionRecordPtr TreeBase::SplitIfNeeded(Region& region, const RecordPt
               std::pair<decltype(border_counts)::iterator, bool> emplacing_result(border_counts.emplace(*where.second, 1));
               if (!emplacing_result.second)
                 emplacing_result.first->second += 1;
-              
+
               if (max_iter == border_counts.end() || max_iter->second < emplacing_result.first->second)
                 max_iter = emplacing_result.first;
             }
@@ -730,7 +881,7 @@ TreeBase::RegionRecordPtr TreeBase::SplitIfNeeded(Region& region, const RecordPt
         // thus setting cutting_through to 0
         if (cutting_through < 0)
           cutting_through = 0;
-          
+
         if (max_iter != border_counts.end()) {
           if (max_shared_count < max_iter->second || (max_shared_count == max_iter->second && cutting_through == 1)) {
             max_shared_count = max_iter->second;
@@ -749,7 +900,7 @@ TreeBase::RegionRecordPtr TreeBase::SplitIfNeeded(Region& region, const RecordPt
       }
 
       new_rr = Split(region, record, split);
-  
+
     }
 
   }
@@ -763,7 +914,7 @@ bool TreeBase::Insert(const RecordPtr& record, const NodeInterfacePtr& new_node)
   if (record->is_leaf) {
     auto node_collection = std::static_pointer_cast<NodeCollection>(record);
     // node duplication (in terms of coordinates) is not allowed
-    
+
     for (const NodeInterfacePtr& existing_node : node_collection->nodes) {
       bool duplicated = true;
       for (unsigned int d = 0; d < dimensionality_; ++d) {
@@ -774,10 +925,10 @@ bool TreeBase::Insert(const RecordPtr& record, const NodeInterfacePtr& new_node)
       }
       if (duplicated)
         return false;
-          
+
     }
     node_collection->nodes.emplace_back(new_node);
-    
+
   }
   else {
     auto region_collection = std::static_pointer_cast<RegionCollection>(record);
@@ -787,9 +938,9 @@ bool TreeBase::Insert(const RecordPtr& record, const NodeInterfacePtr& new_node)
 
         if (!Insert(sub_region_iter->second, new_node))
           return false;
-        
+
         RegionRecordPtr new_sub_region = SplitIfNeeded(sub_region_iter->first, sub_region_iter->second);
-        if (new_sub_region) {        
+        if (new_sub_region) {
           region_collection->regions.emplace_back(std::move(*new_sub_region));
         }
 
@@ -799,9 +950,9 @@ bool TreeBase::Insert(const RecordPtr& record, const NodeInterfacePtr& new_node)
 
     if (sub_region_iter == region_collection->regions.end()) {
       std::ostringstream string_builder;
-      string_builder << "Can not find a region to accommodate this node " << *new_node << "; this might well mean tree data is corrupted!"; 
+      string_builder << "Can not find a region to accommodate this node " << *new_node << "; this might well mean tree data is corrupted!";
       throw std::runtime_error(string_builder.str());
-    }  
+    }
   }
 
   return true;
@@ -813,7 +964,7 @@ bool TreeBase::Delete(const NodeInterfacePtr& target_node) {
   bool result = Delete(full, root_, target_node);
   if (result) {
     node_count_--;
-    if (root_->Size() == 1 && !root_->is_leaf) {      
+    if (root_->Size() == 1 && !root_->is_leaf) {
       auto region_collection = std::static_pointer_cast<RegionCollection>(root_);
       root_ = region_collection->regions.front().second;
     }
@@ -826,7 +977,7 @@ bool TreeBase::Delete(const NodeInterfacePtr& target_node) {
 bool TreeBase::Delete(const Region& region, const RecordPtr& record, const NodeInterfacePtr& target_node) {
   if (record->is_leaf) {
     auto node_collection = std::static_pointer_cast<NodeCollection>(record);
-    
+
     for (NodeCollection::List::iterator node_iter = node_collection->nodes.begin();
           node_iter != node_collection->nodes.end(); ++node_iter) {
       bool matched = true;
@@ -848,11 +999,11 @@ bool TreeBase::Delete(const Region& region, const RecordPtr& record, const NodeI
       if (sub_region_iter->first.Contain(*target_node)) {
         bool result = Delete(sub_region_iter->first, sub_region_iter->second, target_node);
         if (result) {
-          if (sub_region_iter->second->Size() < collection_size_low_) {          
+          if (sub_region_iter->second->Size() < collection_size_low_) {
             if (region_collection->regions.size() > 1) {
               // Finding a boundary of the sub-region (sub_region_iter->first) which is shared
               // with the fewest neighbouring sub-regions, and joining them together
-              
+
               SplitDesc split;
               std::list<RegionCollection::List::iterator> neighbour_list;
               // initialising min_shared_count slightly bigger than region_collection->regions.size(),
@@ -917,13 +1068,13 @@ bool TreeBase::Delete(const Region& region, const RecordPtr& record, const NodeI
             }
           }
 
-          // As the joining operation triggered by deletion might produce regions containing nodes/sub-regions of which the number exceeds collection_size_max_, 
+          // As the joining operation triggered by deletion might produce regions containing nodes/sub-regions of which the number exceeds collection_size_max_,
           // calling SplitIfNeeded() to make sure they still conform to the requirement
           std::list<RegionCollection::List::iterator> might_need_split_list;
           might_need_split_list.emplace_back(sub_region_iter);
           while(!might_need_split_list.empty()) {
             const decltype(might_need_split_list)::value_type& rr_iter = might_need_split_list.front();
-            
+
             RegionRecordPtr new_rr = SplitIfNeeded(rr_iter->first, rr_iter->second);
             if (new_rr) {
               region_collection->regions.emplace_back(std::move(*new_rr));
@@ -971,8 +1122,8 @@ void TreeBase::FindNearests(const RecordPtr& record, const NodeInterface& centre
   else {
     auto region_collection = std::static_pointer_cast<RegionCollection>(record);
     RegionCollection::List::iterator sub_region_iter;
-    for (sub_region_iter = region_collection->regions.begin(); sub_region_iter != region_collection->regions.end(); ++sub_region_iter) {          
-      if (sub_region_iter->first.Contain(centre)) {        
+    for (sub_region_iter = region_collection->regions.begin(); sub_region_iter != region_collection->regions.end(); ++sub_region_iter) {
+      if (sub_region_iter->first.Contain(centre)) {
         FindNearests(sub_region_iter->second, centre, k, nearests);
         break;
       }
@@ -986,8 +1137,8 @@ void TreeBase::FindNearests(const RecordPtr& record, const NodeInterface& centre
       if (nearests.size() == k)
         checking_dist_squared = (--(nearests.end()))->first;
 
-      if (other_iter->first.MightIntersect(centre, checking_dist_squared, false))
-        FindNearests(other_iter->second, centre, k, nearests);          
+      if (other_iter->first.Intersect(centre, checking_dist_squared, false))
+        FindNearests(other_iter->second, centre, k, nearests);
 
     }
 
@@ -995,7 +1146,7 @@ void TreeBase::FindNearests(const RecordPtr& record, const NodeInterface& centre
 }
 
 void TreeBase::FindNears(const NodeInterface& centre, const double radius_squared, std::multimap<double, NodeInterfacePtr>& nears) const {
-  
+
   FindNears(root_, centre, radius_squared, nears);
 }
 
@@ -1017,8 +1168,8 @@ void TreeBase::FindNears(const RecordPtr& record, const NodeInterface& centre, c
   else {
     auto region_collection = std::static_pointer_cast<RegionCollection>(record);
     RegionCollection::List::iterator sub_region_iter;
-    for (sub_region_iter = region_collection->regions.begin(); sub_region_iter != region_collection->regions.end(); ++sub_region_iter) {          
-      if (sub_region_iter->first.Contain(centre)) {        
+    for (sub_region_iter = region_collection->regions.begin(); sub_region_iter != region_collection->regions.end(); ++sub_region_iter) {
+      if (sub_region_iter->first.Contain(centre)) {
         FindNears(sub_region_iter->second, centre, radius_squared, nears);
         break;
       }
@@ -1028,13 +1179,40 @@ void TreeBase::FindNears(const RecordPtr& record, const NodeInterface& centre, c
       if (other_iter == sub_region_iter)
         continue;
 
-      if (other_iter->first.MightIntersect(centre, radius_squared, true))
+      if (other_iter->first.Intersect(centre, radius_squared, true))
         FindNears(other_iter->second, centre, radius_squared, nears);
 
     }
 
   }
 }
+
+void TreeBase::FindContained(const Region& bounding_region, std::list<NodeInterfacePtr>& inside_list) const {
+
+  FindContained(root_, bounding_region, inside_list);
+}
+
+
+void TreeBase::FindContained(const RecordPtr& record, const Region& bounding_region, std::list<NodeInterfacePtr>& inside_list) const {
+  if (record->is_leaf) {
+    auto node_collection = std::static_pointer_cast<NodeCollection>(record);
+    for (const auto& node : node_collection->nodes) {
+      if (bounding_region.Contain(*node, true)) {
+        inside_list.push_back(node);
+      }
+    }
+  }
+  else {
+    auto region_collection = std::static_pointer_cast<RegionCollection>(record);
+    for (RegionCollection::List::iterator sub_region_iter = region_collection->regions.begin(); sub_region_iter != region_collection->regions.end(); ++sub_region_iter) {
+      if (sub_region_iter->first.Intersect(bounding_region, true)) {
+        FindContained(sub_region_iter->second, bounding_region, inside_list);
+      }
+    }
+
+  }
+}
+
 
 
 } // namespace kdb_tree
